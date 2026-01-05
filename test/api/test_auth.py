@@ -28,7 +28,6 @@ class TestAuthAPI:
             "email": registered_user["email"],
             "password": registered_user["password"]
         }
-
         # Вызов метода авторизации через AuthAPI
         response = api_manager.auth_api.login_user(login_data)
         response_data = response.json()
@@ -37,35 +36,20 @@ class TestAuthAPI:
         assert "accessToken" in response_data, "Токен доступа отсутствует в ответе"
         assert response_data["user"]["email"] == registered_user["email"], "Email не совпадает"
 
-    def test_login_with_wrong_password(self, requester, registered_user):
+    def test_login_with_wrong_password(self, api_manager, registered_user):
         """
                 Тест логина с неверным паролем.
         """
-        login_data = {
-            "email": registered_user["email"],
-            "password": registered_user["password"]
-        }
-        response = requester.send_request(
-            method="POST",
-            endpoint=LOGIN_ENDPOINT,
-            data=login_data,
-            expected_status=201
-        )
-
-        if response.status_code not in [201, 409]:
-            pytest.skip(f"Не удалось создать пользователя для теста: {response.status_code}")
-
         # Пытаемся залогиниться с неверным паролем
         wrong_login_data = {
             "email": registered_user["email"],
             "password": "WRONG_PASSWORD_123!"
         }
-        wrong_login_data_response = requester.send_request(
-            method="POST",
-            endpoint=LOGIN_ENDPOINT,
-            data=wrong_login_data,
+        wrong_login_data_response = api_manager.auth_api.login_user(
+            wrong_login_data,
             expected_status=401
         )
+        response_data = wrong_login_data_response.json()
 
         # Ожидаем ошибку (обычно 401, 400 или 403)
         assert wrong_login_data_response.status_code in [401, 400, 403, 422], \

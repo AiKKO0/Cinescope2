@@ -27,20 +27,25 @@ def test_user():
     }
 
 @pytest.fixture(scope="session")
-def registered_user(requester, test_user):
+def registered_user(api_manager, test_user):
     """
-    Фикстура для регистрации и получения данных зарегистрированного пользователя.
+        Фикстура для регистрации и получения данных зарегистрированного пользователя.
+        Регистрирует пользователя через AuthAPI, после теста удаляет через UserAPI.
     """
-    response = requester.send_request(
-        method="POST",
-        endpoint=REGISTER_ENDPOINT,
-        data=test_user,
-        expected_status=201
-    )
+    response = api_manager.auth_api.register_user(test_user)
     response_data = response.json()
+
     registered_user = test_user.copy()
     registered_user["id"] = response_data["id"]
-    return registered_user
+    yield registered_user
+
+    # 3. Пост-обработка: удаление пользователя через API-класс
+    try:
+        api_manager.user_api.delete_user(registered_user["id"])
+    except Exception as e:
+        # Логируем ошибку, но не падаем
+        print(f"⚠️ Не удалось удалить пользователя {registered_user['id']}: {e}")
+
 
 @pytest.fixture(scope="session")
 def requester():
