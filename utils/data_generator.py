@@ -41,3 +41,26 @@ class DataGenerator:
         random.shuffle(password)
 
         return ''.join(password)
+
+    @staticmethod
+    def gererate_random_film():
+        """
+        Генерация фильма, соответствующая требованиям:
+        - Название.
+        - Картинка для поста
+        - Цена
+        - Описание фильма
+        - Локация фильма
+        - Опубликован
+        - generId
+        """
+        return {
+            "name": f"THE {faker.word()} of {faker.name()}!",
+            "imageUrl": faker.image_url(),
+            "price": random.randint(1, 1000),
+            "description": faker.text(max_nb_chars=200),
+            "location": random.choice(["MSK", "SPB"]),
+            "published": random.choice([True, False]),
+            "genreId": random.randint(1, 10)
+        }
+

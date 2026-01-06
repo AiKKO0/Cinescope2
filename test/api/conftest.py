@@ -1,12 +1,15 @@
 from faker import Faker
 import pytest
 import requests
+import os
 
 from api_manager import ApiManager
 from constants import BASE_URL, REGISTER_ENDPOINT, LOGIN_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
 from utils.data_generator import DataGenerator
+from dotenv import load_dotenv
 
+load_dotenv()
 faker = Faker()
 
 @pytest.fixture(scope="session")
@@ -70,3 +73,51 @@ def api_manager(session):
     Фикстура для создания экземпляра ApiManager.
     """
     return ApiManager(session)
+
+@pytest.fixture(scope="session")
+def test_movie():
+    """
+    Генерация случайного фильма
+    """
+    return DataGenerator.gererate_random_film()
+
+@pytest.fixture(scope="session")
+def created_movie(api_manager, test_movie, superadmin_auth):
+    response = api_manager.movies_api.create_movie(test_movie)
+    movie_data = response.json()
+
+    yield movie_data
+
+    api_manager.movies_api.delete_movie(movie_data["id"])
+
+
+
+@pytest.fixture(scope="session")
+def superadmin_credentials():
+    email = os.getenv("SUPERADMIN_EMAIL")
+    password = os.getenv("SUPERADMIN_PASSWORD")
+
+    if not email or not password:
+        pytest.skip("Superadmin credentials not found in .env file")
+
+    return {"email": email, "password": password}
+@pytest.fixture(scope="session")
+def superadmin_auth(api_manager, superadmin_credentials):
+        """
+        Фикстура для авторизации суперадмина.
+        Использует заранее известные креды или создаёт суперадмина.
+        """
+        # Логин с креды суперадмина
+        response = api_manager.auth_api.login_user(superadmin_credentials)
+        response_data = response.json()
+
+        # Установка токена в сессию
+        token = response_data["accessToken"]
+
+        # Возврат session с заголовками
+        api_manager.auth_api._update_session_headers(
+            authorization=f"Bearer {token}"
+        )
+
+        return api_manager
+
