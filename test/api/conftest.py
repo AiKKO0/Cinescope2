@@ -74,6 +74,15 @@ def api_manager(session):
     """
     return ApiManager(session)
 
+@pytest.fixture(scope="function")
+def unauth_api_manager():
+    """
+    Неавторизованный менеджер для тестов без токена
+    """
+    session = requests.Session()  # Создаём новую сессию
+    manager = ApiManager(session)
+    return manager
+
 @pytest.fixture(scope="session")
 def test_movie():
     """
@@ -88,7 +97,28 @@ def created_movie(api_manager, test_movie, superadmin_auth):
 
     yield movie_data
 
-    api_manager.movies_api.delete_movie(movie_data["id"])
+    try:
+        api_manager.movies_api.delete_movie(
+            movie_data["id"],
+            expected_status=[200, 404]  # Принимаем и 200, и 404
+        )
+    except:
+        pass  # Игнорируем любые ошибки при удалении
+
+@pytest.fixture(scope="session")
+def movie_update_data():
+    """
+    Генерация данных для обновления фильма.
+    """
+    full_data = DataGenerator.gererate_random_film()
+
+    return {
+        "name": full_data["name"],
+        "price": full_data["price"],
+        "description": full_data["description"],
+        "published": full_data["published"]
+        # НЕ включаем: location, genreId, imageUrl
+    }
 
 
 

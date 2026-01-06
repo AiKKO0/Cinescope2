@@ -21,6 +21,14 @@ class MoviesApi(CustomRequester):
             expected_status=expected_status
         )
 
+    def get_movies(self, params=None, expected_status=200):
+        return self.send_request(
+            method="GET",
+            endpoint=MOVIES_ENDPOINT,
+            params=params,
+            expected_status=expected_status
+        )
+
     def get_movies_by_id(self, movie_id, expected_status=200):
         """
         Получение фильма по ID.
