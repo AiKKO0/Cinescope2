@@ -1,6 +1,9 @@
-from api.auth_api import AuthAPI
-from api.user_api import UserAPI
-from api.movies_api import MoviesApi
+# from .api.api.auth_api import AuthAPI
+# from .api.api.user_api import UserAPI
+# from .api.api.movies_api import MoviesApi
+from utils_api.auth_api import AuthAPI
+from utils_api.movies_api import MoviesApi
+from utils_api.user_api import UserAPI
 class ApiManager:
     """
     Класс для управления API-классами с единой HTTP-сессией.
