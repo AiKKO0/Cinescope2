@@ -1,6 +1,8 @@
 import random
 from api_manager import ApiManager
-from utils.data_generator import DataGenerator
+
+# from utils.data_generator import DataGenerator
+
 class TestMovieAPI:
     def test_movie_api_created(self, api_manager, created_movie):
         """
@@ -165,6 +167,7 @@ class TestMovieAPI:
         )
 
         assert response.status_code == 404
+
 
 
 

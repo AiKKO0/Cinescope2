@@ -6,8 +6,10 @@ import os
 from api_manager import ApiManager
 from constants import BASE_URL, REGISTER_ENDPOINT, LOGIN_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
+from entities.user import User
 from utils.data_generator import DataGenerator
 from dotenv import load_dotenv
+from resources.user_creds import SuperAdminCreds
 
 load_dotenv()
 faker = Faker()
@@ -151,3 +153,39 @@ def superadmin_auth(api_manager, superadmin_credentials):
 
         return api_manager
 
+@pytest.fixture
+def user_session():
+    user_pool = []
+
+    def _create_user_session():
+        session = requests.Session()
+        user_session = ApiManager(session)
+        user_pool.append(user_session)
+        return user_session
+
+    yield _create_user_session
+
+    for user in user_pool:
+        user.close_session()
+
+@pytest.fixture
+def super_admin(user_session):
+    new_session = user_session()
+
+    super_admin = User(
+        SuperAdminCreds.USERNAME,
+        SuperAdminCreds.PASSWORD,
+        "[SUPER_ADMIN]",
+        new_session)
+
+    super_admin.api.auth_api.authenticate(super_admin.creds)
+    return super_admin
+
+@pytest.fixture(scope="function")
+def creation_user_data(test_user):
+    udated_data = test_user.copy()
+    udated_data.update({
+        "verified": True,
+        "banned": False
+    })
+    return udated_data

@@ -66,4 +66,3 @@ class MoviesApi(CustomRequester):
             expected_status=expected_status
         )
 
-
