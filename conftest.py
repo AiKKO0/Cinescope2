@@ -133,6 +133,7 @@ def superadmin_credentials():
         pytest.skip("Superadmin credentials not found in .env file")
 
     return {"email": email, "password": password}
+
 @pytest.fixture(scope="session")
 def superadmin_auth(api_manager, superadmin_credentials):
         """
@@ -181,11 +182,29 @@ def super_admin(user_session):
     super_admin.api.auth_api.authenticate(super_admin.creds)
     return super_admin
 
+# @pytest.fixture(scope="function")
+# def creation_user_data(test_user):
+#     udated_data = test_user.copy()
+#     udated_data.update({
+#         "verified": True,
+#         "banned": False
+#     })
+#     return udated_data
+
 @pytest.fixture(scope="function")
-def creation_user_data(test_user):
-    udated_data = test_user.copy()
-    udated_data.update({
+def creation_user_data():
+    """
+    Генерация уникальных данных пользователя для каждого теста.
+    Не зависит от test_user фикстуры.
+    """
+
+    return {
+        "email": DataGenerator.generate_random_email(),
+        "fullName": DataGenerator.generate_random_name(),
+        "password": DataGenerator.generate_random_password(),
+        "passwordRepeat": DataGenerator.generate_random_password(),
+        "roles": ["USER"],
         "verified": True,
         "banned": False
-    })
-    return udated_data
+    }
+
