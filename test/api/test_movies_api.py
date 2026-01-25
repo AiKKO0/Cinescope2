@@ -1,4 +1,7 @@
 import random
+
+import requests
+
 from api_manager import ApiManager
 
 # from utils.data_generator import DataGenerator
@@ -167,6 +170,25 @@ class TestMovieAPI:
         )
 
         assert response.status_code == 404
+
+    def test_create_movie_forbidden_for_user_role(self, common_user, test_movie):
+        response = common_user.api.movies_api.create_movie(
+            test_movie,
+            expected_status=403
+        )
+
+        assert response.status_code == 403, "У User не должно быть прав для создания фильма"
+
+    def test_create_movie_allowed_for_admin_role(self, admin_user, test_movie):
+        response = admin_user.api.movies_api.create_movie(
+            test_movie,
+            expected_status=201
+        )
+
+        assert response == 201, "Admin должен иметь права для создания фильма"
+
+        movies_data = response.json()
+        admin_user.api.movies_api.delete_movie(movies_data["id"])
 
 
 

@@ -22,3 +22,7 @@ class TestUser:
         assert response_by_id.get("fullName") == creation_user_data["fullName"]
         assert response_by_id.get("roles", []) == creation_user_data["roles"]
         assert response_by_id.get("verified") is True
+
+    def test_get_user_by_id_common_user(self, common_user):
+        common_user.api.user_api.get_user(common_user.email, expected_status=403)
+

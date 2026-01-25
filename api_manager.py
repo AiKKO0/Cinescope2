@@ -3,7 +3,7 @@
 # from .api.api.movies_api import MoviesApi
 from utils_api.auth_api import AuthAPI
 from utils_api.movies_api import MoviesApi
-from utils_api.user_api import UserAPI
+from utils_api.user_api import UserApi
 
 class ApiManager:
     """
@@ -16,7 +16,7 @@ class ApiManager:
         """
         self.session = session
         self.auth_api = AuthAPI(session)
-        self.user_api = UserAPI(session)
+        self.user_api = UserApi(session)
         self.movies_api = MoviesApi(session)
 
     def close_session(self):
