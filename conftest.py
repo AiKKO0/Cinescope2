@@ -6,49 +6,55 @@ import os
 from api_manager import ApiManager
 from constants import BASE_URL, REGISTER_ENDPOINT, LOGIN_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
+from entities.user import User
 from utils.data_generator import DataGenerator
 from dotenv import load_dotenv
+from resources.user_creds import SuperAdminCreds
+from constant.roles import Roles
 
 load_dotenv()
 faker = Faker()
 
 @pytest.fixture(scope="session")
 def test_user():
-    """
-    Генерация случайного пользователя для тестов.
-    """
-    random_email = DataGenerator.generate_random_email()
-    random_name = DataGenerator.generate_random_name()
     random_password = DataGenerator.generate_random_password()
 
     return {
-        "email": random_email,
-        "fullName": random_name,
+        "email": DataGenerator.generate_random_email(),
+        "fullName": DataGenerator.generate_random_name(),
         "password": random_password,
         "passwordRepeat": random_password,
-        "roles": ["USER"]
+        "roles": [Roles.USER.value]
     }
 
+
 @pytest.fixture(scope="session")
-def registered_user(api_manager, test_user):
+def registered_user(api_manager):
     """
-        Фикстура для регистрации и получения данных зарегистрированного пользователя.
-        Регистрирует пользователя через AuthAPI, после теста удаляет через UserAPI.
+    Фикстура для регистрации и получения данных зарегистрированного пользователя.
     """
-    response = api_manager.auth_api.register_user(test_user)
+    # Создаём данные пользователя прямо здесь
+    random_password = DataGenerator.generate_random_password()
+    user_data = {
+        "email": DataGenerator.generate_random_email(),
+        "fullName": DataGenerator.generate_random_name(),
+        "password": random_password,
+        "passwordRepeat": random_password,
+        "roles": [Roles.USER.value]
+    }
+
+    response = api_manager.auth_api.register_user(user_data)
     response_data = response.json()
 
-    registered_user = test_user.copy()
-    registered_user["id"] = response_data["id"]
-    yield registered_user
+    registered_user_data = user_data.copy()
+    registered_user_data["id"] = response_data["id"]
+    yield registered_user_data
 
-    # 3. Пост-обработка: удаление пользователя через API-класс
+    # Пост-обработка: удаление пользователя
     try:
-        api_manager.user_api.delete_user(registered_user["id"])
+        api_manager.user_api.delete_user(registered_user_data["id"])
     except Exception as e:
-        # Логируем ошибку, но не падаем
-        print(f"⚠️ Не удалось удалить пользователя {registered_user['id']}: {e}")
-
+        print(f"⚠️ Не удалось удалить пользователя {registered_user_data['id']}: {e}")
 
 @pytest.fixture(scope="session")
 def requester():
@@ -131,6 +137,7 @@ def superadmin_credentials():
         pytest.skip("Superadmin credentials not found in .env file")
 
     return {"email": email, "password": password}
+
 @pytest.fixture(scope="session")
 def superadmin_auth(api_manager, superadmin_credentials):
         """
@@ -150,4 +157,89 @@ def superadmin_auth(api_manager, superadmin_credentials):
         )
 
         return api_manager
+
+@pytest.fixture
+def user_session():
+    user_pool = []
+
+    def _create_user_session():
+        session = requests.Session()
+        user_session = ApiManager(session)
+        user_pool.append(user_session)
+        return user_session
+
+    yield _create_user_session
+
+    for user in user_pool:
+        user.close_session()
+
+@pytest.fixture
+def super_admin(user_session):
+    new_session = user_session()
+
+    super_admin = User(
+        SuperAdminCreds.USERNAME,
+        SuperAdminCreds.PASSWORD,
+        [Roles.SUPER_ADMIN.value],
+        new_session)
+
+    super_admin.api.auth_api.authenticate(super_admin.creds)
+    return super_admin
+
+# @pytest.fixture(scope="function")
+# def creation_user_data(test_user):
+#     udated_data = test_user.copy()
+#     udated_data.update({
+#         "verified": True,
+#         "banned": False
+#     })
+#     return udated_data
+
+@pytest.fixture(scope="function")
+def creation_user_data():
+    """
+    Генерация уникальных данных пользователя для каждого теста.
+    Не зависит от test_user фикстуры.
+    """
+
+    return {
+        "email": DataGenerator.generate_random_email(),
+        "fullName": DataGenerator.generate_random_name(),
+        "password": DataGenerator.generate_random_password(),
+        "passwordRepeat": DataGenerator.generate_random_password(),
+        "roles": [Roles.USER.value],
+        "verified": True,
+        "banned": False
+    }
+
+@pytest.fixture
+def common_user(user_session, super_admin, creation_user_data):
+    new_session = user_session()
+
+    common_user = User(
+        creation_user_data['email'],
+        creation_user_data['password'],
+        [Roles.USER.value],
+        new_session)
+
+    super_admin.api.user_api.create_user(creation_user_data)
+    common_user.api.auth_api.authenticate(common_user.creds)
+    return common_user
+
+@pytest.fixture
+def admin_user(user_session, super_admin, creation_user_data):
+    new_session = user_session()
+
+    # Создаём admin user
+    admin_user = User(
+        creation_user_data['email'],
+        creation_user_data['password'],
+        [Roles.ADMIN.value],  # Роль ADMIN
+        new_session
+    )
+
+    super_admin.api.user_api.create_user(creation_user_data)
+    admin_user.api.auth_api.login_user(admin_user.creds)
+
+    return admin_user
 

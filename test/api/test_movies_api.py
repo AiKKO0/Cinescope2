@@ -1,6 +1,11 @@
 import random
+import pytest
+import requests
+
 from api_manager import ApiManager
-from utils.data_generator import DataGenerator
+
+# from utils.data_generator import DataGenerator
+
 class TestMovieAPI:
     def test_movie_api_created(self, api_manager, created_movie):
         """
@@ -54,7 +59,7 @@ class TestMovieAPI:
     def test_get_movies_with_filters_genreId(self, created_movie, superadmin_auth):
         """
         Тест фильтрации фильмов.
-        Требование: "Как минимум 1 тест на проверку фильтров"
+        Тест по фильтру <<genreId>>
         """
         # Получаем все фильмы
         response_all = superadmin_auth.movies_api.get_movies()
@@ -165,6 +170,139 @@ class TestMovieAPI:
         )
 
         assert response.status_code == 404
+
+    def test_create_movie_forbidden_for_user_role(self, common_user, test_movie):
+        response = common_user.api.movies_api.create_movie(
+            test_movie,
+            expected_status=403
+        )
+
+        assert response.status_code == 403, "У User не должно быть прав для создания фильма"
+
+    # def test_create_movie_allowed_for_admin_role(self, admin_user, test_movie):
+    #     response = admin_user.api.movies_api.create_movie(
+    #         test_movie,
+    #         expected_status=201
+    #     )
+    #
+    #     assert response == 201, "Admin должен иметь права для создания фильма"
+    #
+    #     movies_data = response.json()
+    #     admin_user.api.movies_api.delete_movie(movies_data["id"])
+
+    @pytest.mark.parametrize("minPrice,maxPrice", [
+        (1, 1000),
+        (1, 10000),
+        (100, 500),
+        (200, 10000),
+        (1, 1000),
+        (1, 1000),
+        (1, 1000),
+    ])
+    def test_movies_filter_min_max_price(self, minPrice, maxPrice, api_manager):
+        params = {
+            "minPrice": minPrice,
+            "maxPrice": maxPrice
+        }
+        response = api_manager.movies_api.get_movies(params=params)
+        assert response.status_code == 200
+
+        data = response.json()  # это СЛОВАРЬ!
+
+        # Извлекаем список фильмов
+        movies = data.get("movies", [])
+
+        # Проверяем, что фильмы есть
+        assert movies, "Список фильмов пуст"
+
+        # Проверки
+        for movie in movies:
+            assert minPrice <= movie["price"] <= maxPrice, (
+                f"Фильм {movie['name']} цена {movie['price']} вне диапазона {minPrice}-{maxPrice}"
+            )
+
+        @pytest.mark.parametrize("locations", [
+            "SPB",  # Одна локация
+            "MSK",  # Одна локация
+            "KZN",  # Одна локация (если есть)
+            "SPB,MSK",  # Две локации
+            "SPB,MSK,KZN",  # Три локации (если есть)
+        ])
+        def test_movies_filter_locations(self, locations, api_manager):
+            params = {
+                "locations": locations
+            }
+            response = api_manager.movies_api.get_movies(params=params)
+            assert response.status_code == 200
+            data = response.json()
+            movies = data.get("movies", [])
+
+            allowed_locations = locations.split(",")
+
+            for movie in movies:
+                movie_location = movie["location"]
+                movie_name = movie["name"]
+
+                assert movie_location in allowed_locations, (
+                    f"Фильм '{movie_name}' имеет локацию '{movie_location}', "
+                    f"которая не входит в разрешенный список: {allowed_locations}"
+                )
+
+            unique_locations = set(movie["location"] for movie in movies)
+            print(f"Уникальные локации в ответе: {unique_locations}")
+
+
+    @pytest.mark.parametrize("locations", [
+            "SPB",  # Одна локация
+            "MSK",  # Одна локация
+            "SPB,MSK",  # Две локации
+        ])
+    def test_movies_filter_locations(self, locations, api_manager):
+        params = {
+                "locations": locations
+            }
+        response = api_manager.movies_api.get_movies(params=params)
+        assert response.status_code == 200
+        data = response.json()
+        movies = data.get("movies", [])
+
+        allowed_locations = locations.split(",")
+
+        for movie in movies:
+            movie_location = movie["location"]
+            movie_name = movie["name"]
+
+            assert movie_location in allowed_locations, (
+                    f"Фильм '{movie_name}' имеет локацию '{movie_location}', "
+                    f"которая не входит в разрешенный список: {allowed_locations}"
+                )
+
+
+    @pytest.mark.parametrize("genreId", [
+    1, 2, 3, 4, 5, 6
+])
+    def test_movies_filter_genreIds(self, genreId, api_manager):
+        params = {
+            "genreId": genreId
+        }
+        response = api_manager.movies_api.get_movies(params=params)
+        assert response.status_code == 200
+        data = response.json()
+        movies = data.get("movies", [])
+
+        for movie in movies:
+            movie_genreId = movie["genreId"]
+            movie_name = movie["name"]
+
+            assert movie_genreId == genreId, (
+                f"Фильм '{movie_name}' имеет genreId={movie_genreId}, ",
+                f"но ожидалось {genreId}"
+            )
+
+
+
+
+
 
 
 
