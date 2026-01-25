@@ -15,7 +15,7 @@ from constant.roles import Roles
 load_dotenv()
 faker = Faker()
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def test_user():
     random_password = DataGenerator.generate_random_password()
 
@@ -27,26 +27,34 @@ def test_user():
         "roles": [Roles.USER.value]
     }
 
+
 @pytest.fixture(scope="session")
-def registered_user(api_manager, test_user):
+def registered_user(api_manager):
     """
-        Фикстура для регистрации и получения данных зарегистрированного пользователя.
-        Регистрирует пользователя через AuthAPI, после теста удаляет через UserAPI.
+    Фикстура для регистрации и получения данных зарегистрированного пользователя.
     """
-    response = api_manager.auth_api.register_user(test_user)
+    # Создаём данные пользователя прямо здесь
+    random_password = DataGenerator.generate_random_password()
+    user_data = {
+        "email": DataGenerator.generate_random_email(),
+        "fullName": DataGenerator.generate_random_name(),
+        "password": random_password,
+        "passwordRepeat": random_password,
+        "roles": [Roles.USER.value]
+    }
+
+    response = api_manager.auth_api.register_user(user_data)
     response_data = response.json()
 
-    registered_user = test_user.copy()
-    registered_user["id"] = response_data["id"]
-    yield registered_user
+    registered_user_data = user_data.copy()
+    registered_user_data["id"] = response_data["id"]
+    yield registered_user_data
 
-    # 3. Пост-обработка: удаление пользователя через API-класс
+    # Пост-обработка: удаление пользователя
     try:
-        api_manager.user_api.delete_user(registered_user["id"])
+        api_manager.user_api.delete_user(registered_user_data["id"])
     except Exception as e:
-        # Логируем ошибку, но не падаем
-        print(f"⚠️ Не удалось удалить пользователя {registered_user['id']}: {e}")
-
+        print(f"⚠️ Не удалось удалить пользователя {registered_user_data['id']}: {e}")
 
 @pytest.fixture(scope="session")
 def requester():

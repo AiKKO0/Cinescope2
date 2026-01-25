@@ -3,6 +3,7 @@ import requests
 from constants import BASE_URL, HEADERS, REGISTER_ENDPOINT,  LOGIN_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
 from api_manager import ApiManager
+from resources.user_creds import SuperAdminCreds
 
 
 class TestAuthAPI:
@@ -61,3 +62,15 @@ class TestAuthAPI:
             # Проверяем что в ответе нет accessToken (если есть сообщение об ошибке)
             if "accessToken" in response_data:
                 print("Предупреждение: accessToken присутствует в ответе об ошибке")
+
+    @pytest.mark.parametrize("email, password, expected_status", [
+        (f"{SuperAdminCreds.USERNAME}", f"{SuperAdminCreds.PASSWORD}", 200),
+        ("test_login1@email.com", "asdqwe123Q!", 401),  # Сервис не может обработать логин по незареганному юзеру
+        ("", "password", 401),
+    ], ids=["Admin login", "Invalid user", "Empty username"])
+    def test_login(self, email, password, expected_status, api_manager):
+        login_data = {
+            "email": email,
+            "password": password
+        }
+        api_manager.auth_api.login_user(login_data=login_data, expected_status=expected_status)
