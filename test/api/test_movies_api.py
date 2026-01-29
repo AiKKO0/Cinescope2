@@ -221,35 +221,35 @@ class TestMovieAPI:
                 f"Фильм {movie['name']} цена {movie['price']} вне диапазона {minPrice}-{maxPrice}"
             )
 
-        @pytest.mark.parametrize("locations", [
+    @pytest.mark.parametrize("locations", [
             "SPB",  # Одна локация
             "MSK",  # Одна локация
             "KZN",  # Одна локация (если есть)
             "SPB,MSK",  # Две локации
             "SPB,MSK,KZN",  # Три локации (если есть)
         ])
-        def test_movies_filter_locations(self, locations, api_manager):
-            params = {
+    def test_movies_filter_locations(self, locations, api_manager):
+        params = {
                 "locations": locations
             }
-            response = api_manager.movies_api.get_movies(params=params)
-            assert response.status_code == 200
-            data = response.json()
-            movies = data.get("movies", [])
+        response = api_manager.movies_api.get_movies(params=params)
+        assert response.status_code == 200
+        data = response.json()
+        movies = data.get("movies", [])
 
-            allowed_locations = locations.split(",")
+        allowed_locations = locations.split(",")
 
-            for movie in movies:
-                movie_location = movie["location"]
-                movie_name = movie["name"]
+        for movie in movies:
+            movie_location = movie["location"]
+            movie_name = movie["name"]
 
-                assert movie_location in allowed_locations, (
+            assert movie_location in allowed_locations, (
                     f"Фильм '{movie_name}' имеет локацию '{movie_location}', "
                     f"которая не входит в разрешенный список: {allowed_locations}"
                 )
 
-            unique_locations = set(movie["location"] for movie in movies)
-            print(f"Уникальные локации в ответе: {unique_locations}")
+        unique_locations = set(movie["location"] for movie in movies)
+        print(f"Уникальные локации в ответе: {unique_locations}")
 
 
     @pytest.mark.parametrize("locations", [
@@ -299,6 +299,28 @@ class TestMovieAPI:
                 f"но ожидалось {genreId}"
             )
 
+    def test_user_delete_movie(self, common_user, created_movie):
+        """
+        ТЕСТ: USER не может удалить фильм
+        """
+        movie_id = created_movie["id"]
+
+        response = common_user.api.movies_api.delete_movie(
+            movie_id,
+            expected_status=403
+        )
+        assert response.status_code == 403, "У User не должно быть прав для удаления фильма"
+
+    def test_admin_create_delete_movie(self, existing_admin_user, created_movie):
+        """
+        ТЕСТ: Admin не может удалить фильм
+        """
+        movie_id = created_movie["id"]
+        response = existing_admin_user.api.movies_api.delete_movie(
+            movie_id,
+            expected_status=403
+        )
+        assert response.status_code == 403, "У Admin не должно быть прав для удаления фильма"
 
 
 

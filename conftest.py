@@ -227,19 +227,20 @@ def common_user(user_session, super_admin, creation_user_data):
     return common_user
 
 @pytest.fixture
-def admin_user(user_session, super_admin, creation_user_data):
+def existing_admin_user(user_session):
+    email = os.getenv("ADMIN_EMAIL")
+    password = os.getenv("ADMIN_PASSWORD")
+
     new_session = user_session()
 
     # Создаём admin user
     admin_user = User(
-        creation_user_data['email'],
-        creation_user_data['password'],
+        email,
+        password,
         [Roles.ADMIN.value],  # Роль ADMIN
         new_session
     )
 
-    super_admin.api.user_api.create_user(creation_user_data)
-    admin_user.api.auth_api.login_user(admin_user.creds)
-
+    admin_user.api.auth_api.authenticate(admin_user.creds)
     return admin_user
 
