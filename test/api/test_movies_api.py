@@ -7,6 +7,7 @@ from api_manager import ApiManager
 # from utils.data_generator import DataGenerator
 
 class TestMovieAPI:
+    @pytest.mark.slow
     def test_movie_api_created(self, api_manager, created_movie):
         """
                 Тест на создание фильма.
@@ -170,7 +171,7 @@ class TestMovieAPI:
         )
 
         assert response.status_code == 404
-
+    @pytest.mark.slow
     def test_create_movie_forbidden_for_user_role(self, common_user, test_movie):
         response = common_user.api.movies_api.create_movie(
             test_movie,
@@ -298,7 +299,7 @@ class TestMovieAPI:
                 f"Фильм '{movie_name}' имеет genreId={movie_genreId}, ",
                 f"но ожидалось {genreId}"
             )
-
+    @pytest.mark.slow
     def test_user_delete_movie(self, common_user, created_movie):
         """
         ТЕСТ: USER не может удалить фильм
@@ -322,6 +323,17 @@ class TestMovieAPI:
         )
         assert response.status_code == 403, "У Admin не должно быть прав для удаления фильма"
 
+    #Flaky tests маркеры пример
+    @pytest.mark.flaky
+    def test_random_fail(self):
+        import random
+        assert random.choice([True, False])
+
+    @pytest.mark.flaky
+    @pytest.mark.flaky(reruns=2, reruns_delay=1)
+    def test_maybe_fails(self):
+        import random
+        assert random.choice([True, False])
 
 
 

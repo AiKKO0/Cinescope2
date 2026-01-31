@@ -30,3 +30,10 @@ class UserApi(CustomRequester):
             data=update_data,
             expected_status=expected_status
         )
+
+    def delete_user(self, user_id, expected_status=200):
+        return self.send_request(
+            method="DELETE",
+            endpoint=f"user/{user_id}",
+            expected_status=expected_status
+        )

@@ -1,4 +1,4 @@
-
+import pytest
 
 class TestUser:
 
@@ -11,6 +11,7 @@ class TestUser:
         assert response.get("roles", []) == creation_user_data["roles"]
         assert response.get("verified") is True
 
+    @pytest.mark.slow
     def test_get_user_by_locator(self, super_admin, creation_user_data):
         created_user_response = super_admin.api.user_api.create_user(creation_user_data).json()
         response_by_id = super_admin.api.user_api.get_user(created_user_response["id"]).json()
@@ -23,6 +24,7 @@ class TestUser:
         assert response_by_id.get("roles", []) == creation_user_data["roles"]
         assert response_by_id.get("verified") is True
 
+    @pytest.mark.slow
     def test_get_user_by_id_common_user(self, common_user):
         common_user.api.user_api.get_user(common_user.email, expected_status=403)
 
