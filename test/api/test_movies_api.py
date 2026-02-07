@@ -222,6 +222,7 @@ class TestMovieAPI:
                 f"Фильм {movie['name']} цена {movie['price']} вне диапазона {minPrice}-{maxPrice}"
             )
 
+
     @pytest.mark.parametrize("locations", [
             "SPB",  # Одна локация
             "MSK",  # Одна локация
@@ -312,6 +313,7 @@ class TestMovieAPI:
         )
         assert response.status_code == 403, "У User не должно быть прав для удаления фильма"
 
+
     def test_admin_create_delete_movie(self, existing_admin_user, created_movie):
         """
         ТЕСТ: Admin не может удалить фильм
@@ -323,13 +325,14 @@ class TestMovieAPI:
         )
         assert response.status_code == 403, "У Admin не должно быть прав для удаления фильма"
 
+
     #Flaky tests маркеры пример
     @pytest.mark.flaky
     def test_random_fail(self):
         import random
         assert random.choice([True, False])
 
-    @pytest.mark.flaky
+
     @pytest.mark.flaky(reruns=2, reruns_delay=1)
     def test_maybe_fails(self):
         import random

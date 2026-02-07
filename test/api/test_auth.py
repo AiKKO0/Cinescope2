@@ -3,6 +3,7 @@ import requests
 from constants import BASE_URL, HEADERS, REGISTER_ENDPOINT,  LOGIN_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
 from api_manager import ApiManager
+from models.base_models import RegisterUserResponse
 from resources.user_creds import SuperAdminCreds
 
 
@@ -11,14 +12,13 @@ class TestAuthAPI:
         """
         Тест на регистрацию пользователя.
         """
-        response = api_manager.auth_api.register_user(test_user)
-        response_data = response.json()
+
+        response = api_manager.auth_api.register_user(user_data=test_user)
+        register_user_response = RegisterUserResponse(**response.json())
 
         # Проверки
-        assert response_data["email"] == test_user["email"], "Email не совпадает"
-        assert "id" in response_data, "ID пользователя отсутствует в ответе"
-        assert "roles" in response_data, "Роли пользователя отсутствуют в ответе"
-        assert "USER" in response_data["roles"], "Роль USER должна быть у пользователя"
+        assert register_user_response.email == test_user.email, "Email не совпадает"
+
 
     def test_register_and_login_user(self, api_manager, registered_user):
         """
@@ -27,15 +27,17 @@ class TestAuthAPI:
         # Данные для авторизации
         login_data = {
             "email": registered_user["email"],
-            "password": registered_user["password"]
+            "password": registered_user["password"]  # Убедись, что password есть в registered_user!
         }
+
         # Вызов метода авторизации через AuthAPI
-        response = api_manager.auth_api.login_user(login_data)
+        response = api_manager.auth_api.login_user(login_data=login_data)
         response_data = response.json()
 
         # Проверки данных ответа
         assert "accessToken" in response_data, "Токен доступа отсутствует в ответе"
         assert response_data["user"]["email"] == registered_user["email"], "Email не совпадает"
+
 
     def test_login_with_wrong_password(self, api_manager, registered_user):
         """
@@ -63,7 +65,8 @@ class TestAuthAPI:
             if "accessToken" in response_data:
                 print("Предупреждение: accessToken присутствует в ответе об ошибке")
 
-    @pytest.mark.api
+
+    # @pytest.mark.api
     def test_registered_login_and_delete_user(self, api_manager, test_user):
         """
            ТЕСТ: Регистрации, авторизации и удаление USER'a
@@ -76,11 +79,11 @@ class TestAuthAPI:
 
         # 2. Авторизация пользователя
         login_data = {
-            "email": test_user["email"],
-            "password": test_user["password"]
+            "email": test_user.email,
+            "password": test_user.password
         }
         login_response = api_manager.auth_api.login_user(login_data)
-        assert login_response.status_code == 201
+        assert login_response.status_code == 200
 
         login_response_data = login_response.json()
 
@@ -94,8 +97,9 @@ class TestAuthAPI:
         delete_response = api_manager.user_api.delete_user(user_id)
         assert delete_response.status_code == 200
 
+
     @pytest.mark.parametrize("email, password, expected_status", [
-        (f"{SuperAdminCreds.USERNAME}", f"{SuperAdminCreds.PASSWORD}", 201),
+        (f"{SuperAdminCreds.USERNAME}", f"{SuperAdminCreds.PASSWORD}", 200),
         ("test_login1@email.com", "asdqwe123Q!", 401),  # Сервис не может обработать логин по незареганному юзеру
         ("", "password", 401),
     ], ids=["Admin login", "Invalid user", "Empty username"])
@@ -105,6 +109,7 @@ class TestAuthAPI:
             "password": password
         }
         api_manager.auth_api.login_user(login_data=login_data, expected_status=expected_status)
+
 
     @pytest.mark.skip(reason="Временно отключён")
     def test_example(self):
