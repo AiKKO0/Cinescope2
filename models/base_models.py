@@ -16,7 +16,7 @@ class TestUser(BaseModel):
     banned: Optional[bool] = None
 
     @field_validator("passwordRepeat")
-    def check_password_repeat(cls, value: str, info) -> str:
+    def validate_password_repeat(cls, value: str, info) -> str:
         # Проверяем, совпадение паролей
         if "password" in info.data and value != info.data["password"]:
             raise ValueError("Пароли не совпадают")
@@ -39,7 +39,7 @@ class RegisterUserResponse(BaseModel):
     createdAt: str = Field(description="Дата и время создания пользователя в формате ISO 8601")
 
     @field_validator("createdAt")
-    def validate_created_at(cls, value: str) -> str:
+    def validate_created_at_format(cls, value: str) -> str:
         # Валидатор для проверки формата даты и времени (ISO 8601).
         try:
             datetime.datetime.fromisoformat(value)
