@@ -3,6 +3,8 @@ import pytest
 import requests
 
 from api_manager import ApiManager
+from conftest import superadmin_auth
+
 
 # from utils.data_generator import DataGenerator
 
@@ -325,6 +327,16 @@ class TestMovieAPI:
         )
         assert response.status_code == 403, "У Admin не должно быть прав для удаления фильма"
 
+    def test_deleted_movie(self, api_manager, superadmin_auth):
+        """TEST deleted movie"""
+        movie_id = 7
+
+        deleted_movie = superadmin_auth.movies_api.delete_movie(
+            movie_id=movie_id)
+        assert deleted_movie.status_code == 200, "Фильм должен успеть удалиться"
+
+        get_response = api_manager.movies_api.get_movies_by_id(movie_id=movie_id, expected_status=404)
+        assert get_response.status_code == 404, "Фильм не должен существовать"
 
     #Flaky tests маркеры пример
     @pytest.mark.flaky
