@@ -1,8 +1,10 @@
+import sqlalchemy
 from faker import Faker
 import pytest
 import requests
 import os
-
+from sqlalchemy.orm import Session
+from db_requester.db_client import get_db_session
 from api_manager import ApiManager
 from constants import BASE_URL, REGISTER_ENDPOINT, LOGIN_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
@@ -12,6 +14,7 @@ from utils.data_generator import DataGenerator
 from dotenv import load_dotenv
 from resources.user_creds import SuperAdminCreds
 from constant.roles import Roles
+from db_requester.db_helpers import DBHelper
 
 load_dotenv()
 faker = Faker()
@@ -246,4 +249,38 @@ def existing_admin_user(user_session):
 
     admin_user.api.auth_api.authenticate(admin_user.creds)
     return admin_user
+
+@pytest.fixture(scope="module")
+def db_session() -> Session:
+    """
+        Фикстура, которая создает и возвращает сессию для работы с базой данных
+        После завершения теста сессия автоматически закрывается
+    """
+    db_session = get_db_session()
+    yield db_session
+    db_session.close()
+
+@pytest.fixture(scope="function")
+def db_helper(db_session) -> DBHelper:
+    """
+    Фикстура для экземпляра хелпера
+    """
+    db_helper = DBHelper(db_session)
+    return db_helper
+
+@pytest.fixture(scope="function")
+def created_test_user(db_helper):
+    """
+    Фикстура, которая создает тестового пользователя в БД
+    и удаляет его после завершения теста
+    """
+    user = db_helper.create_test_user(DataGenerator.generate_user_data())
+    yield user
+    # Cleanup после теста
+    if db_helper.get_user_by_id(user.id):
+        db_helper.delete_user(user)
+
+
+
+
 
