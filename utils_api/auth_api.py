@@ -21,12 +21,15 @@ class AuthAPI(CustomRequester):
             expected_status=expected_status
         )
 
-    def login_user(self, login_data, expected_status=200):
+    def login_user(self, login_data, expected_status=None):
         """
         Авторизация пользователя.
         :param login_data: Данные для логина.
         :param expected_status: Ожидаемый статус-код.
         """
+        if expected_status is None:
+            expected_status = [200, 201]  # Теперь принимает оба статуса
+
         return self.send_request(
             method="POST",
             endpoint=LOGIN_ENDPOINT,
@@ -40,7 +43,7 @@ class AuthAPI(CustomRequester):
             "password": user_creds[1]
         }
 
-        response = self.login_user(login_data).json()
+        response = self.login_user(login_data, expected_status=201).json()
         if "accessToken" not in response:
             raise KeyError("token is missing")
 

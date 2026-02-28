@@ -28,7 +28,8 @@ def test_user() -> TestUser:
         fullName=DataGenerator.generate_random_name(),
         password=random_password,
         passwordRepeat=random_password,
-        roles=[Roles.USER]
+        roles=[Roles.USER],
+        banned=False
     )
 
 
@@ -40,7 +41,8 @@ def registered_user(api_manager):
         fullName=DataGenerator.generate_random_name(),
         password=random_password,
         passwordRepeat=random_password,
-        roles=[Roles.USER]
+        roles=[Roles.USER],
+        banned=False
     )
 
     # Преобразуй в словарь
@@ -48,6 +50,7 @@ def registered_user(api_manager):
 
     response = api_manager.auth_api.register_user(user_data_dict)
     response_data = response.json()
+
     # ДОБАВЛЯЕМ пароль в response_data
     response_data_with_password = response_data.copy()
     response_data_with_password["password"] = random_password
