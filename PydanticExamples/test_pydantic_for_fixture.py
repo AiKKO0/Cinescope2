@@ -10,7 +10,7 @@ class TestUser(BaseModel):
     password: str = Field(min_length=8, max_length=20)
     passwordRepeat: str = Field(min_length=8, max_length=20)
     roles: List[Roles]
-    banned: Optional[bool] = False
+    banned: Optional[bool] = Field(default=None, description="Может быть null от API")
     verified: Optional[bool] = True
 
     # 1. Валидация email (должен содержать @)

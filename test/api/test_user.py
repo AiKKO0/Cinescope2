@@ -4,7 +4,9 @@ from models.base_models import RegisterUserResponse
 
 class TestUser:
     def test_created_user(self, super_admin, creation_user_data):
-        response = super_admin.api.user_api.create_user(user_data=creation_user_data)
+        response = super_admin.api.user_api.create_user(user_data=creation_user_data, expected_status=201)
+        response_data = response.json()
+        created_user = RegisterUserResponse(**response_data)
         response_data = response.json()
 
         user_response = RegisterUserResponse(**response_data)
@@ -22,7 +24,7 @@ class TestUser:
 
     @pytest.mark.slow
     def test_get_user_by_locator(self, super_admin, creation_user_data):
-        response = super_admin.api.user_api.create_user(user_data=creation_user_data)
+        response = super_admin.api.user_api.create_user(user_data=creation_user_data, expected_status=201)
         response_data = response.json()
 
         created_user = RegisterUserResponse(**response.json())

@@ -31,7 +31,7 @@ class TestAuthAPI:
         }
 
         # Вызов метода авторизации через AuthAPI
-        response = api_manager.auth_api.login_user(login_data=login_data)
+        response = api_manager.auth_api.login_user(login_data=login_data, expected_status=201)
         response_data = response.json()
 
         # Проверки данных ответа
@@ -82,8 +82,8 @@ class TestAuthAPI:
             "email": test_user.email,
             "password": test_user.password
         }
-        login_response = api_manager.auth_api.login_user(login_data)
-        assert login_response.status_code == 200
+        login_response = api_manager.auth_api.login_user(login_data, expected_status=201)
+        assert login_response.status_code == 201
 
         login_response_data = login_response.json()
 
@@ -99,7 +99,7 @@ class TestAuthAPI:
 
 
     @pytest.mark.parametrize("email, password, expected_status", [
-        (f"{SuperAdminCreds.USERNAME}", f"{SuperAdminCreds.PASSWORD}", 200),
+        (f"{SuperAdminCreds.USERNAME}", f"{SuperAdminCreds.PASSWORD}", 201),
         ("test_login1@email.com", "asdqwe123Q!", 401),  # Сервис не может обработать логин по незареганному юзеру
         ("", "password", 401),
     ], ids=["Admin login", "Invalid user", "Empty username"])
