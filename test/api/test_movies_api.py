@@ -354,9 +354,6 @@ class TestMovieAPI:
         import random
         assert random.choice([True, False])
 
-
-class TestMovieApiWhithAllure:
-
     @allure.feature("Movies API")
     @allure.story("Валидация схемы ответа")
     @allure.title("Проверка, что ответ /movies соответствует Pydantic схеме")
