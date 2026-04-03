@@ -29,6 +29,10 @@ class DBHelper:
         """Получает фильм по названию"""
         return self.db_session.query(MovieDBModel).filter(MovieDBModel.name == name).first()
 
+    def get_movie_by_id(self, movie_id: str):
+        """Получает фильм по ID"""
+        return self.db_session.query(MovieDBModel).filter(MovieDBModel.id == movie_id).first()
+
     def user_exists_by_email(self, email: str) -> bool:
         """Проверяет существование пользователя по email"""
         return self.db_session.query(UserDBModel).filter(UserDBModel.email == email).count() > 0

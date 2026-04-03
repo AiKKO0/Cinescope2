@@ -47,3 +47,33 @@ class RegisterUserResponse(BaseModel):
         except ValueError:
             raise ValueError("Некорректный формат даты и времени. Ожидается формат ISO 8601.")
         return value
+
+class MoviesSchema(BaseModel):
+    """
+    Pydantic модель для валидации ответа API /movies
+    """
+    id: int = Field(..., gt=0, description="Уникальный идентификатор фильма")
+    name: str = Field(..., min_length=1, max_length=255, description="Название фильма")
+    price: float = Field(..., gt=0, description="Цена билета")
+    location: str = Field(..., description="Локация показа (MSK или SPB)")
+    genreId: int = Field(..., ge=1, alias="genreId", description="ID жанра")
+    imageUrl: Optional[str] = Field(None, alias="imageUrl", description="URL постера")
+    description: Optional[str] = Field(None, description="Описание фильма")
+    published: Optional[bool] = Field(None, description="Опубликован ли фильм")
+
+    class Config:
+        # Разрешаем использовать alias (genreId вместо genre_id)
+        populate_by_name = True
+
+    @field_validator("location")
+    def validate_location(cls, value: str) -> str:
+        """Проверка допустимых локаций"""
+        allowed = ["MSK", "SPB"]
+        if value not in allowed:
+            raise ValueError(f"Локация должна быть одной из: {allowed}")
+        return value
+
+class MoviesListResponse(BaseModel):
+    """Pydantic модель для ответа GET /movies (список фильмов)"""
+    movies: List[MoviesSchema] = Field(..., description="Список фильмов")
+    total: Optional[int] = Field(None, description="Общее количество фильмов (может отсутствовать)")

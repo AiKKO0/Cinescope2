@@ -1,9 +1,13 @@
 import random
+
+import allure
 import pytest
 import requests
 
 from api_manager import ApiManager
 from conftest import superadmin_auth
+from models.base_models import MoviesListResponse, MoviesSchema
+from utils.data_generator import MovieDataGenerator
 
 
 # from utils.data_generator import DataGenerator
@@ -351,6 +355,66 @@ class TestMovieAPI:
         assert random.choice([True, False])
 
 
+class TestMovieApiWhithAllure:
+
+    @allure.feature("Movies API")
+    @allure.story("Валидация схемы ответа")
+    @allure.title("Проверка, что ответ /movies соответствует Pydantic схеме")
+    def test_movies_response_schema_validation(self, api_manager):
+        """
+        ЭКЗАМЕН: Обязательный тест на проверку схемы через Pydantic
+        """
+        response = api_manager.movies_api.get_movies()
+        assert response.status_code == 200
+
+        # КЛЮЧЕВОЙ МОМЕНТ - валидация через Pydantic
+        movies_response = MoviesListResponse(**response.json())
+
+        # Дополнительные проверки (уже не обязательны, но для уверенности)
+        for movie in movies_response.movies:
+            assert movie.id > 0
+            assert movie.name
+            assert movie.price > 0
+            assert movie.location in ["MSK", "SPB"]
+            assert movie.genreId >= 1
+
+    @allure.feature("Movies API")
+    @allure.story("Создание фильма")
+    @allure.title("Создание фильма с валидацией ответа через Pydantic")
+    def test_create_movie_with_pydantic_validation(self, superadmin_auth):
+        """Создание фильма и проверка ответа через Pydantic"""
+        # Используем генератор
+        movie_data = MovieDataGenerator.generate_random_film()
+
+        # Создаём фильм
+        response = superadmin_auth.movies_api.create_movie(movie_data, expected_status=201)
+
+        # Валидация ответа через Pydantic
+        created_movie = MoviesSchema(**response.json())
+
+        # Проверяем соответствие отправленным данным
+        assert created_movie.name == movie_data["name"]
+        assert created_movie.price == movie_data["price"]
+        assert created_movie.location == movie_data["location"]
+        assert created_movie.genreId == movie_data["genreId"]
+
+    @allure.feature("Movies API")
+    @allure.story("Фильтрация")
+    @allure.title("Проверка фильтрации по жанрам с валидацией схемы")
+    @pytest.mark.parametrize("genreId", [1, 2, 3, 4, 5, 6])
+    def test_movies_filter_by_genre_with_schema(self, api_manager, genreId):
+        """Параметризованный тест + Pydantic валидация"""
+        params = {"genreId": genreId}
+        response = api_manager.movies_api.get_movies(params=params)
+        assert response.status_code == 200
+
+        # Валидация через Pydantic
+        movies_response = MoviesListResponse(**response.json())
+
+        # Проверка фильтрации
+        for movie in movies_response.movies:
+            assert movie.genreId == genreId, \
+                f"Фильм {movie.name} имеет genreId={movie.genreId}, ожидался {genreId}"
 
 
 

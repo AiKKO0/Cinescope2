@@ -44,8 +44,18 @@ class CustomRequester:
         response = self.session.request(method, url, json=data, params=params, headers=self.headers)
         if need_logging:
             self.log_request_and_response(response)
-        if response.status_code != expected_status:
-            raise ValueError(f"Unexpected status code: {response.status_code}. Expected: {expected_status}")
+
+        if isinstance(expected_status, list):
+            if response.status_code not in expected_status:
+                raise ValueError(
+                    f"Unexpected status code: {response.status_code}. "
+                    f"Expected one of: {expected_status}. URL: {url}"
+                )
+        elif response.status_code != expected_status:
+            raise ValueError(
+                f"Unexpected status code: {response.status_code}. "
+                f"Expected: {expected_status}. URL: {url}"
+            )
 
         return response
 
