@@ -11,7 +11,7 @@ class MovieDBModel(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)  # text в БД
     price = Column(Integer) # int4 В БД
-    director = Column(String) # text в БД
+    description = Column(String) # text в БД
     image_url = Column(String) # text в БД
     location = Column(String) # int4 В БД
     published = Column(Boolean) # bool в БД

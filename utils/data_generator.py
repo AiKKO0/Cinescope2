@@ -85,3 +85,30 @@ class DataGenerator:
     def generate_random_int(length: int = 10) -> str:
         """Генерирует случайное число заданной длины"""
         return ''.join(random.choices(string.digits, k=length))
+
+
+class MovieDataGenerator:
+    """Генератор данных для тестов (соответствует API, а не БД!)"""
+
+    @staticmethod
+    def generate_random_film():
+        """
+        Генерация фильма для API запросов (CREATE/PATCH)
+        """
+        return {
+            "name": f"Movie_{random.randint(1, 9999)}",
+            "imageUrl": f"https://example.com/poster_{random.randint(1, 999)}.jpg",
+            "price": random.randint(100, 1000),
+            "location": random.choice(["MSK", "SPB"]),
+            "description": faker.text(max_nb_chars=200),
+            "published": random.choice([True, False]),
+            "genreId": random.randint(1, 10)
+        }
+
+    @staticmethod
+    def generate_update_data():
+        """Генерация данных для PATCH запроса"""
+        return {
+            "name": f"Updated_Movie_{random.randint(1, 9999)}",
+            "price": random.randint(200, 2000)
+        }
